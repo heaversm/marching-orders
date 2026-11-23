@@ -2,7 +2,8 @@
 // and what the practice run found. Uses Claude and the key saved in .profile/ by
 // `npm run try` (each draft is a paid call, two if it redrafts). Close the try
 // window first. Usage:
-//   node e2e/real.mjs <url> "<sentence>" [--local]
+//   node e2e/real.mjs <url> "<sentence>" [--local] [--save=<file>]
+// --save writes the draft as an order file, the same as pressing Share.
 import { join } from "node:path";
 import { launch, root, sidebarPage, until, sleep } from "../lib/firefox.mjs";
 import { startRelay } from "../lib/relay.mjs";
@@ -48,6 +49,12 @@ try {
     console.log(JSON.stringify({ can_do: d.can_do, cannot_reason: d.cannot_reason, title: d.title, summary: d.summary, trigger: d.trigger, sites: d.sites, model: d.model }, null, 1));
     console.log("steps:", JSON.stringify(d.steps, null, 1));
     if (pr) console.log("practice:", JSON.stringify({ ok: pr.ok, error: pr.error, found: pr.found, kept: pr.kept, told: pr.told.slice(0, 8), warnings: pr.warnings, steps: pr.steps, firstItems: pr.items?.slice(0, 3) }, null, 1));
+    const save = process.argv.find((a) => a.startsWith("--save="))?.slice(7);
+    if (save) {
+      const { writeFileSync } = await import("node:fs");
+      writeFileSync(save, JSON.stringify((await send({ type: "share", id: d.id })).value, null, 2));
+      console.log("saved order file:", save);
+    }
     await send({ type: "discard", id: d.id });
   }
 } finally { await browser.close(); site.kill(); relay?.close(); }

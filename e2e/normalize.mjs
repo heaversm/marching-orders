@@ -25,6 +25,10 @@ check(eq(fixed.trigger, { kind: "every", minutes: 10080 }), "the stated “once 
 check(fixed.steps[0].do === "open" && fixed.steps[0].url === "https://global.americanexpress.com/activity/recent", "a missing open step becomes the page it was written on");
 check(eq(fixed.sites, ["https://global.americanexpress.com"]), "and that site is added to what it may touch");
 check(fixed.steps.at(-1).do === "notify" && fixed.model === "local", "a notify step is added; the judge stays on the local model");
+const watcher = normalize({ ...broken, trigger: { kind: "every", minutes: 30 }, steps: [broken.steps[0], { do: "notify", title: "t", line: "{merchant}", only_if: [] }] }, "let me know when a studio shows up", "https://a.com/x");
+check(watcher.steps.map((s) => s.do).join(",") === "open,collect,only_new,notify", "a 30-minute watcher without “only new” gets it, before notify", watcher.steps.map((s) => s.do).join(","));
+const daily = normalize({ ...broken, trigger: { kind: "daily", at: "07:00" } }, "every day at 7am", "https://a.com/x");
+check(!daily.steps.some((s) => s.do === "only_new"), "a daily order (a forecast) doesn't get “only new”");
 const visit = normalize({ ...broken, trigger: { kind: "on_visit", match: "https://x.com/" } }, "whenever I open x", "https://x.com/a");
 check(!visit.steps.some((s) => s.do === "open"), "an on-visit order isn't given an open step");
 const chosen = normalize({ ...broken, trigger: { kind: "every", minutes: 30 } }, "once a week", "https://a.com");

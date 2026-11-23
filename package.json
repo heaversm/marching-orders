@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "site": "node test-site/server.mjs",
     "try": "node lib/build.mjs && node lib/try.mjs",
-    "test": "node e2e/normalize.mjs && node lib/build.mjs --test && node e2e/features.mjs --headless && node e2e/private.mjs && node e2e/redraft.mjs && node e2e/share.mjs && node e2e/run.mjs --headless",
+    "test": "node e2e/normalize.mjs && node lib/build.mjs --test && node e2e/features.mjs --headless && node e2e/private.mjs && node e2e/redraft.mjs && node e2e/share.mjs && node e2e/change.mjs && node e2e/long-call.mjs && node e2e/run.mjs --headless",
     "test:writer": "node lib/build.mjs --test && node e2e/writer.mjs",
     "relay": "node lib/relay.mjs",
     "test:real": "node lib/build.mjs --test && node e2e/real.mjs"

@@ -29,7 +29,9 @@ In the sidebar:
 - **Settings (⚙):** paste an Anthropic API key, or switch the writer to the local model.
 - **Give an order:** type a sentence and press **Draft it**. Firefox asks to read the page. The draft shows what the order may touch, whether it sends data anywhere, and its steps, and it has already done a practice run (no notifications, nothing remembered).
 - **Approve and start:** Firefox asks for the order's sites, then the order runs on its own.
-- **Share:** saves an `.marching-order.json` file. **Import an order…** loads one.
+- **Private page:** tick it on a bank or other private page. Every letter and digit is masked before the writer sees the page, and the order's judgment steps always run on the local model.
+- **Change:** puts an order's sentence back in the box. Approving the new draft replaces the old order and keeps its record of what was already reported.
+- **Share:** saves an `.marching-order.json` file to your downloads folder. **Import an order…** loads one.
 - **Export study log:** what orders did, without what they found. This is for the friends-and-colleagues study.
 
 Test-site controls:
@@ -88,6 +90,7 @@ The setting lasts until the Mac restarts. After a restart, do the same three ste
 
 - `npm test`: end-to-end checks in the downloaded Firefox, headless. They cover import, practice, approval and Firefox's site grant, runs, new listings, a site redesign and repair, blocked sites, hiding page parts on visit, a judgment step, sharing, pause, the timer, and the study export. Model steps use a local Ollama on port 11435, started like this: `OLLAMA_HOST=127.0.0.1:11435 OLLAMA_ORIGINS="moz-extension://*" ollama serve`. Add `--skip-slow` to skip the model and timer checks.
 - `npm run test:real -- <url> "<sentence>"`: drafts an order with Claude on a real public page and prints the steps and the practice run. Uses the key saved by `npm run try`, so quit that window first.
+- `node e2e/change.mjs`: the Change button, with a stand-in for Claude (no paid calls).
 - `node e2e/share.mjs`: two separate Firefox profiles. One approves and runs an order and presses **Share**. The other imports the file, then practices, approves and runs it.
 - `node e2e/capture.mjs`, then `node e2e/render-shots.mjs`: screenshots of the extension for documentation, saved to `shots/` (set `SHOTS_DIR` to save elsewhere). The capture loads orders from files, so it makes no paid AI calls.
 - `npm run test:writer`: gives the writer the same sentences several times and counts how often the practice run gets the right answer. `-- --cloud` uses Claude. Each draft is one paid API call.

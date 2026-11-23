@@ -38,6 +38,12 @@ export function normalize(d: Draft, sentence: string, pageUrl?: string): Draft {
     steps.unshift({ do: "open", url: pageUrl });
     sites.push(origin(pageUrl));
   }
+  // A watcher on a repeating timer that reads items should only report new ones; without
+  // this it would repeat the same items every run. Daily orders (a forecast) are left alone.
+  if (trigger.kind === "every" && steps.some((s) => s.do === "collect") && !steps.some((s) => s.do === "only_new")) {
+    const at = steps.findIndex((s) => s.do === "notify");
+    steps.splice(at >= 0 ? at : steps.length, 0, { do: "only_new", field: "" });
+  }
   // An order that reads items but never tells you or changes the page does nothing you can see.
   const collect = steps.find((s) => s.do === "collect");
   if (collect && collect.do === "collect" && !steps.some((s) => s.do === "notify" || s.do === "hide" || s.do === "highlight")) {

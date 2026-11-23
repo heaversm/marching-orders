@@ -67,3 +67,5 @@ h3.toggle .short { display: none; font-weight: normal; }
 .card.collapsed h3.toggle .chev { transform: rotate(-90deg); }
 .card.collapsed h3.toggle .short { display: inline; }
 .card, .result, details li { overflow-wrap: anywhere; }
+.changing { background: var(--card); border: 1px solid var(--accent); border-radius: 6px; padding: 8px; font-size: 13px; margin: 0 0 8px; }
+.changing button { margin-left: 4px; padding: 2px 8px; font-size: 12px; }

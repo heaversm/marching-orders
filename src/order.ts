@@ -113,8 +113,11 @@ export interface Order extends Draft {
   repairs: number;
   /** Who wrote it, if imported. */
   from?: string;
-  /** The writer saw this page's layout only, never its text; repairs do the same. */
+  /** The writer saw this page's layout only, never its text; repairs do the same, and
+   * judge/summarize steps always run on the local model. */
   layoutOnly?: boolean;
+  /** A draft made with Change: approving it replaces this order. */
+  replaces?: string;
 }
 
 export interface StepNote { do: string; note: string; ok: boolean }

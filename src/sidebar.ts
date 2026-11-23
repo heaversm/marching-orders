@@ -15,6 +15,13 @@ async function call<T = unknown>(msg: Record<string, unknown>): Promise<T> {
 
 let state: { orders: Order[]; drafts: Order[]; log: RunRecord[]; settings: { apiKey: string; writer: string; localModel: string }; page: string } | null = null;
 let busy = "";
+// Set by an order's Change button: the next draft replaces that order when approved.
+let changing: { id: string; title: string } | null = null;
+function showChanging() {
+  const el = $("changing");
+  el.hidden = !changing;
+  if (changing) el.innerHTML = `Changing <b>${esc(changing.title)}</b>. Edit the sentence and press Draft it; approving the new draft replaces the old order. <button class="ghost" data-act="stop-change">Keep the old one</button>`;
+}
 // Which order cards are folded to their title; kept between sidebar openings.
 const collapsed = new Set<string>(JSON.parse(localStorage.getItem("collapsed") ?? "[]"));
 
@@ -126,6 +133,7 @@ function draftCard(d: Order) {
   return `<div class="card draft" data-id="${d.id}">
     <h3>${esc(d.title)}</h3>
     <p class="sentence">“${esc(d.sentence)}”${d.from ? ` <span class="badge">from ${esc(d.from)}</span>` : ""}</p>
+    ${d.replaces ? `<p class="meta">Replaces “${esc(state!.orders.find((o) => o.id === d.replaces)?.title ?? "an order")}” when you approve it.</p>` : ""}
     <p>${esc(d.summary)}</p>
     ${slip(d)}
     <ol class="steps">${d.steps.map((s) => `<li>${stepText(s, d.model)}</li>`).join("")}</ol>
@@ -161,6 +169,7 @@ function orderCard(o: Order) {
     <div class="row">
       <button data-act="run"${o.trigger.kind === "on_visit" ? ' title="Runs on the page you have open, if it matches"' : ""}>Run now</button>
       <button data-act="pause">${o.paused ? "Resume" : "Pause"}</button>
+      <button data-act="change">Change</button>
       <button data-act="share">Share</button>
       <button class="ghost danger" data-act="cancel">Cancel order</button>
     </div>
@@ -208,15 +217,17 @@ $("draft").addEventListener("click", () => {
     $<HTMLButtonElement>("draft").disabled = true;
     setStatus("Writing the order and trying it out…", "busy");
     try {
-      const d = await call<Order>({ type: "draft", sentence, usePage, layoutOnly: usePage && $<HTMLInputElement>("layout-only").checked });
-      setStatus(d.can_do ? "Here's the draft. Nothing runs until you approve it." : "");
+      const d = await call<Order>({ type: "draft", sentence, usePage, layoutOnly: usePage && $<HTMLInputElement>("layout-only").checked, replaces: changing?.id });
+      setStatus(d.can_do ? (d.replaces ? "Here's the new version. The old order keeps running until you approve this one." : "Here's the draft. Nothing runs until you approve it.") : "");
       $<HTMLTextAreaElement>("sentence").value = "";
+      changing = null; showChanging();
     } catch (e) { setStatus((e as Error).message, "error"); }
     finally { busy = ""; $<HTMLButtonElement>("draft").disabled = false; await refresh(); }
   })();
 });
 
 document.body.addEventListener("click", (ev) => {
+  if ((ev.target as HTMLElement).closest("button[data-act=stop-change]")) { changing = null; showChanging(); $<HTMLTextAreaElement>("sentence").value = ""; return; }
   const head = (ev.target as HTMLElement).closest("#orders h3.toggle");
   if (head && !(ev.target as HTMLElement).closest("a, button")) {
     const card = head.closest<HTMLElement>("[data-id]")!;
@@ -233,6 +244,16 @@ document.body.addEventListener("click", (ev) => {
   const all = [...(state?.drafts ?? []), ...(state?.orders ?? [])];
   const o = all.find((x) => x.id === id);
   if (!o) return;
+  if (act === "change") {
+    changing = { id: o.id, title: o.title };
+    const box = $<HTMLTextAreaElement>("sentence");
+    box.value = o.sentence;
+    $<HTMLInputElement>("layout-only").checked = !!o.layoutOnly;
+    showChanging();
+    box.focus();
+    box.scrollIntoView({ block: "center" });
+    return;
+  }
   if (act === "approve") {
     const practiced = state!.log.filter((r) => r.orderId === id).at(-1);
     if (practiced && !practiced.ok && !confirm(`The practice run didn't work: ${practiced.error ?? practiced.steps.find((x) => !x.ok)?.note ?? "it found nothing"}.\n\nApprove anyway?`)) return;

@@ -219,7 +219,8 @@ export async function runOrder(order: Order, why: RunRecord["why"], visitTab?: n
   // What passes the filters before "only new" drops the ones already reported, for the Matches list.
   let pool: Record<string, string>[] | null = null;
   let freshIds: Set<string> | null = null;
-  const where = order.model === "cloud" ? "cloud" : "local";
+  // Private-page orders never send page items to the cloud, whatever the order file says.
+  const where = order.model === "cloud" && !order.layoutOnly ? "cloud" : "local";
   try {
     for (let i = 0; i < order.steps.length; i++) {
       const step = order.steps[i];
@@ -562,6 +563,7 @@ async function draftFrom(sentence: string, usePage: boolean, layoutOnly = false,
   progress(settings.writer === "cloud" ? "Asking Claude to write the order…" : "Asking the local model to write the order (1–2 minutes)…");
   let draft = normalize(prior ?? (await writeOrder(settings, sentence, page)).value, sentence, realUrl);
   if (layoutOnly && realUrl) draft = unmaskUrls(draft, realUrl);
+  if (layoutOnly && draft.model === "cloud") draft = { ...draft, model: "local" };
   const order: Order = { ...draft, id: uid(), sentence, createdAt: Date.now(), approved: false, paused: false, version: 1, repairs: 0, layoutOnly };
   return order;
 }
@@ -577,7 +579,7 @@ function unmaskUrls(d: Draft, realUrl: string): Draft {
 type Msg =
   | { type: "state" }
   | { type: "page" }
-  | { type: "draft"; sentence: string; usePage: boolean; layoutOnly?: boolean }
+  | { type: "draft"; sentence: string; usePage: boolean; layoutOnly?: boolean; replaces?: string }
   | { type: "practice"; id: string }
   | { type: "approve"; id: string }
   | { type: "discard"; id: string }
@@ -607,6 +609,7 @@ async function handle(msg: Msg): Promise<unknown> {
     case "draft": {
       await event("draft-asked", { sentence: msg.sentence });
       const d = await draftFrom(msg.sentence, msg.usePage, !!msg.layoutOnly);
+      if (msg.replaces && (await getOrder(msg.replaces))) d.replaces = msg.replaces;
       if (d.can_do) {
         // Practice right away so the person sees what it would do. One retry if it found nothing.
         const missing = d.sites.filter((s) => origin(s)).map((s) => pattern(origin(s)));
@@ -632,7 +635,7 @@ async function handle(msg: Msg): Promise<unknown> {
               fresh ? "The outline below is the page exactly as the order sees it when it opens the page fresh. The person's own tab may have looked different (something clicked or selected), so choose selectors from this outline." : "",
             ].filter(Boolean).join("; ");
             let second = normalize((await writeOrder(settings, msg.sentence, page, feedback)).value, msg.sentence, tab.url);
-            if (msg.layoutOnly) second = unmaskUrls(second, tab.url);
+            if (msg.layoutOnly) second = { ...unmaskUrls(second, tab.url), model: second.model === "cloud" ? "local" : second.model };
             Object.assign(d, second);
             await event("redrafted", { id: d.id, feedback });
             await practiceDraft(d);
@@ -653,6 +656,15 @@ async function handle(msg: Msg): Promise<unknown> {
       const d = drafts.find((o) => o.id === msg.id);
       if (!d) throw new Error("No such draft");
       d.approved = true;
+      // Approving a changed order replaces the old one, and keeps its record of what was
+      // already reported, so the new version doesn't tell you about the same things again.
+      const old = d.replaces ? await getOrder(d.replaces) : undefined;
+      if (old) {
+        await setSeen(d.id, await getSeen(old.id));
+        await browser.alarms.clear(`order:${old.id}`);
+        await saveOrders((await getOrders()).filter((o) => o.id !== old.id));
+        await event("changed", { from: old.id, to: d.id });
+      }
       await putOrder(d);
       await setDrafts(drafts.filter((o) => o.id !== msg.id));
       await schedule(d);
