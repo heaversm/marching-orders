@@ -1,0 +1,32 @@
+{
+  "name": "marching-orders",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Marching Orders: write a sentence, get a small browser tool that runs on its own under limits Firefox enforces.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node lib/build.mjs && node lib/build.mjs --test",
+    "typecheck": "tsc --noEmit",
+    "site": "node test-site/server.mjs",
+    "try": "node lib/build.mjs && node lib/try.mjs",
+    "test": "node e2e/normalize.mjs && node lib/build.mjs --test && node e2e/features.mjs --headless && node e2e/private.mjs && node e2e/redraft.mjs && node e2e/share.mjs && node e2e/run.mjs --headless",
+    "test:writer": "node lib/build.mjs --test && node e2e/writer.mjs",
+    "relay": "node lib/relay.mjs",
+    "test:real": "node lib/build.mjs --test && node e2e/real.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.11.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/firefox-webext-browser": "^143.0.1",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "puppeteer": "^25.18.1",
+    "typescript": "^7.0.2"
+  }
+}

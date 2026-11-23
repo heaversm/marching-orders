@@ -1,0 +1,74 @@
+{
+  "format": "marching-orders/1",
+  "sentence": "Tell me when a 2-bed under $2,800 shows up on this page",
+  "draft": {
+    "can_do": true,
+    "cannot_reason": "",
+    "title": "Cheap 2-beds on Maple Rentals",
+    "summary": "Checks Maple Rentals every 30 minutes for new 2-beds under $2,800.",
+    "trigger": {
+      "kind": "every",
+      "minutes": 30
+    },
+    "sites": [
+      "http://maple-rentals.test:8090"
+    ],
+    "model": "none",
+    "steps": [
+      {
+        "do": "open",
+        "url": "http://maple-rentals.test:8090/listings"
+      },
+      {
+        "do": "collect",
+        "items": "article.listing",
+        "fields": [
+          {
+            "name": "title",
+            "selector": "h2.title",
+            "attribute": "text"
+          },
+          {
+            "name": "price",
+            "selector": ".price",
+            "attribute": "text"
+          },
+          {
+            "name": "beds",
+            "selector": ".beds",
+            "attribute": "text"
+          },
+          {
+            "name": "link",
+            "selector": "h2.title a",
+            "attribute": "href"
+          }
+        ],
+        "key": "link"
+      },
+      {
+        "do": "keep",
+        "field": "beds",
+        "test": "contains",
+        "value": "2"
+      },
+      {
+        "do": "keep",
+        "field": "price",
+        "test": "less_than",
+        "value": "2800"
+      },
+      {
+        "do": "only_new",
+        "field": ""
+      },
+      {
+        "do": "notify",
+        "title": "New 2-beds under $2,800",
+        "line": "{title} — {price}",
+        "only_if": []
+      }
+    ]
+  },
+  "sharedAt": "2026-11-23T17:34:07.223Z"
+}

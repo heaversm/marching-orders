@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.browsers/
+.env
+.profile/
+*.marching-order.json
+marching-orders-study-*.json
+dist-test/
+shots/
+!examples/*.marching-order.json
+# the global "Icon?" rule (macOS folder icons) also matches this folder
+!public/icons/

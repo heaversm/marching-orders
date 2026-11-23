@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Marching Orders</title>
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <header>
+    <h1><img src="icons/icon-32.png" alt=""> Marching Orders</h1>
+    <button id="settings-toggle" class="ghost" title="Settings" aria-label="Settings">⚙</button>
+  </header>
+
+  <section id="settings" hidden>
+    <h2>Settings</h2>
+    <label>Anthropic API key
+      <input id="api-key" type="password" autocomplete="off" placeholder="sk-ant-…">
+    </label>
+    <p class="hint" id="key-state"></p>
+    <label>Who writes your orders
+      <select id="writer">
+        <option value="cloud">Claude (cloud) — better at reading pages</option>
+        <option value="local">Local model (Ollama) — nothing leaves this computer</option>
+      </select>
+    </label>
+    <label>Local model <input id="local-model" placeholder="qwen3:14b"></label>
+    <div class="row">
+      <button id="save-settings">Save</button>
+      <button id="export-study" class="ghost">Export study log</button>
+    </div>
+  </section>
+
+  <section id="compose">
+    <label for="sentence" class="big">Give an order</label>
+    <textarea id="sentence" rows="3" placeholder="Tell me when a 2-bed under $2,800 shows up on this page"></textarea>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="use-page" checked> Use this page <span id="page-host" class="hint"></span></label>
+    </div>
+    <div class="row">
+      <label class="check" title="Letters and digits on the page are masked before the writer sees it. Use for banks and other private pages."><input type="checkbox" id="layout-only"> Private page: the writer sees its layout, not its text</label>
+    </div>
+    <div class="row">
+      <button id="draft" class="primary">Draft it</button>
+      <label class="ghost file">Import an order…<input type="file" id="import" accept=".json,application/json" hidden></label>
+    </div>
+    <p id="status" class="status" role="status"></p>
+  </section>
+
+  <section id="drafts"></section>
+
+  <section>
+    <h2>Your marching orders</h2>
+    <div id="orders"><p class="hint">None yet. Give one above.</p></div>
+  </section>
+
+  <script src="sidebar.js" type="module"></script>
+</body>
+</html>
